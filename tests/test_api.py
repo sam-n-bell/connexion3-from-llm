@@ -1,14 +1,13 @@
 """API endpoint tests"""
-import json
 from tests.base_test import BaseTestCase
 
 
 class TestHealthEndpoint(BaseTestCase):
     """Tests for health check endpoint"""
     
-    def test_health_check(self):
+    async def test_health_check(self):
         """Test health endpoint returns 200"""
-        response = self.client.get('/api/v1/health')
+        response = await self.client.get('/api/v1/health')
         self.assertEqual(response.status_code, 200)
         
         data = response.json()
@@ -19,18 +18,18 @@ class TestHealthEndpoint(BaseTestCase):
 class TestUsersEndpoint(BaseTestCase):
     """Tests for user endpoints"""
     
-    def test_get_users(self):
+    async def test_get_users(self):
         """Test getting all users"""
-        response = self.client.get('/api/v1/users')
+        response = await self.client.get('/api/v1/users')
         self.assertEqual(response.status_code, 200)
         
         data = response.json()
         self.assertIsInstance(data, list)
         self.assertGreater(len(data), 0)
     
-    def test_get_user_by_id(self):
+    async def test_get_user_by_id(self):
         """Test getting a specific user"""
-        response = self.client.get('/api/v1/users/1')
+        response = await self.client.get('/api/v1/users/1')
         self.assertEqual(response.status_code, 200)
         
         data = response.json()
@@ -38,19 +37,19 @@ class TestUsersEndpoint(BaseTestCase):
         self.assertIn('name', data)
         self.assertIn('email', data)
     
-    def test_get_user_not_found(self):
+    async def test_get_user_not_found(self):
         """Test getting a non-existent user"""
-        response = self.client.get('/api/v1/users/9999')
+        response = await self.client.get('/api/v1/users/9999')
         self.assertEqual(response.status_code, 404)
     
-    def test_create_user(self):
+    async def test_create_user(self):
         """Test creating a new user"""
         new_user = {
             "name": "Charlie",
             "email": "charlie@example.com"
         }
         
-        response = self.client.post(
+        response = await self.client.post(
             '/api/v1/users',
             json=new_user
         )
@@ -62,14 +61,14 @@ class TestUsersEndpoint(BaseTestCase):
         self.assertEqual(data['name'], 'Charlie')
         self.assertEqual(data['email'], 'charlie@example.com')
     
-    def test_create_user_missing_fields(self):
+    async def test_create_user_missing_fields(self):
         """Test creating a user with missing required fields"""
         incomplete_user = {
             "name": "Dave"
             # Missing email field
         }
         
-        response = self.client.post(
+        response = await self.client.post(
             '/api/v1/users',
             json=incomplete_user
         )

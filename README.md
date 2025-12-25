@@ -1,6 +1,6 @@
-# Connexion 3.x Flask ASGI Example
+# Connexion 3.x Pure ASGI Example
 
-This is a complete example of a Flask API using Connexion 3.x (ASGI-first), including a full test suite with a base test class that all tests inherit from.
+This is a complete example of a pure ASGI API using Connexion 3.x with Python 3.13+, including a full async test suite with a base test class that all tests inherit from.
 
 ## Project Structure
 
@@ -46,17 +46,23 @@ make run
 ```
 
 ### Production
-Run with gunicorn + uvicorn workers:
-
-```bash
-gunicorn -k uvicorn.workers.UvicornWorker --workers 4 --timeout 120 -b 0.0.0.0:7878 app:app
-```
-
-Or with uvicorn directly:
+Run with uvicorn:
 
 ```bash
 uvicorn app:app --host 0.0.0.0 --port 7878 --workers 4
 ```
+
+**Worker Sizing:**
+- Use **1-2x CPU cores** as a starting point
+- Each worker is a separate process with its own event loop
+- One worker can handle hundreds of concurrent async requests
+- Monitor CPU usage (target 70-80%) and adjust
+
+**Example:**
+- 2 vCPUs → `--workers 2` or `--workers 4`
+- 4 vCPUs → `--workers 4` or `--workers 8`
+
+**Important:** Workers don't share memory. Use Redis/database for shared state.
 
 The API will be available at:
 - Base URL: `http://localhost:7878`
@@ -87,9 +93,9 @@ uv run pytest tests/ -v
 ## Test Structure
 
 All test classes inherit from `BaseTestCase` in `tests/base_test.py`, which:
-- Gets the underlying Flask app from the Connexion App
-- Provides a test client (`self.client`) to all test classes
-- Uses Flask's test client for synchronous testing
+- Uses `unittest.IsolatedAsyncioTestCase` for async test support
+- Provides an async httpx test client (`self.client`)
+- All test methods must be async
 
 Example test class:
 
@@ -97,17 +103,19 @@ Example test class:
 from tests.base_test import BaseTestCase
 
 class TestMyEndpoint(BaseTestCase):
-    def test_something(self):
-        response = self.client.get('/api/v1/endpoint')
+    async def test_something(self):
+        response = await self.client.get('/api/v1/endpoint')
         self.assertEqual(response.status_code, 200)
 ```
 
 ## Key Features
 
-- **Connexion 3.x with ASGI**: Uses `connexion.App` (ASGI-first) with Flask backend
+- **Python 3.13+**: Uses the latest Python version with native async support
+- **Pure ASGI**: Uses `connexion.AsyncApp` with Starlette backend (no Flask)
+- **Async Handlers**: All API endpoints are async functions
 - **OpenAPI Specification**: All endpoints defined in `specs/swagger.yaml`
-- **Production Ready**: Works with gunicorn + uvicorn workers for production deployment
-- **Base Test Class**: All tests inherit from `BaseTestCase` for consistent test client setup
+- **Production Ready**: Uses uvicorn with multiple workers for production deployment
+- **Async Tests**: All tests are async using `IsolatedAsyncioTestCase`
 - **uv Package Manager**: Fast, modern Python package management
 
 ## Example API Usage

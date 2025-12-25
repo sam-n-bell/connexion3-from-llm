@@ -8,12 +8,12 @@ USERS_DB = {
 NEXT_ID = 3
 
 
-def get_users():
+async def get_users():
     """Get all users"""
     return list(USERS_DB.values()), 200
 
 
-def get_user(user_id):
+async def get_user(user_id):
     """Get a specific user by ID"""
     user = USERS_DB.get(user_id)
     if user:
@@ -21,7 +21,7 @@ def get_user(user_id):
     return {"error": "User not found"}, 404
 
 
-def create_user(body):
+async def create_user(body):
     """Create a new user"""
     global NEXT_ID
     
