@@ -1,6 +1,6 @@
-# Connexion 3.x Flask WSGI Example
+# Connexion 3.x Flask ASGI Example
 
-This is a complete example of a Flask API using Connexion 3.x with WSGI (not ASGI), including a full test suite with a base test class that all tests inherit from.
+This is a complete example of a Flask API using Connexion 3.x (ASGI-first), including a full test suite with a base test class that all tests inherit from.
 
 ## Project Structure
 
@@ -38,10 +38,24 @@ uv sync --dev
 
 ## Running the API
 
-To launch the Flask API server:
+### Development
+To launch the development server:
 
 ```bash
 make run
+```
+
+### Production
+Run with gunicorn + uvicorn workers:
+
+```bash
+gunicorn -k uvicorn.workers.UvicornWorker --workers 4 --timeout 120 -b 0.0.0.0:7878 app:app
+```
+
+Or with uvicorn directly:
+
+```bash
+uvicorn app:app --host 0.0.0.0 --port 7878 --workers 4
 ```
 
 The API will be available at:
@@ -73,10 +87,9 @@ uv run pytest tests/ -v
 ## Test Structure
 
 All test classes inherit from `BaseTestCase` in `tests/base_test.py`, which:
-- Creates a Connexion FlaskApp instance
-- Registers all endpoints from the Swagger spec
+- Gets the underlying Flask app from the Connexion App
 - Provides a test client (`self.client`) to all test classes
-- Uses Flask's WSGI test client (not async)
+- Uses Flask's test client for synchronous testing
 
 Example test class:
 
@@ -91,10 +104,10 @@ class TestMyEndpoint(BaseTestCase):
 
 ## Key Features
 
-- **Connexion 3.x with Flask/WSGI**: Uses `FlaskApp` for WSGI compatibility (not AsyncApp)
+- **Connexion 3.x with ASGI**: Uses `connexion.App` (ASGI-first) with Flask backend
 - **OpenAPI Specification**: All endpoints defined in `specs/swagger.yaml`
+- **Production Ready**: Works with gunicorn + uvicorn workers for production deployment
 - **Base Test Class**: All tests inherit from `BaseTestCase` for consistent test client setup
-- **Non-async Tests**: All tests use standard unittest and Flask's WSGI test client
 - **uv Package Manager**: Fast, modern Python package management
 
 ## Example API Usage

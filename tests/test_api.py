@@ -11,7 +11,7 @@ class TestHealthEndpoint(BaseTestCase):
         response = self.client.get('/api/v1/health')
         self.assertEqual(response.status_code, 200)
         
-        data = json.loads(response.data)
+        data = response.json()
         self.assertEqual(data['status'], 'healthy')
         self.assertIn('message', data)
 
@@ -24,7 +24,7 @@ class TestUsersEndpoint(BaseTestCase):
         response = self.client.get('/api/v1/users')
         self.assertEqual(response.status_code, 200)
         
-        data = json.loads(response.data)
+        data = response.json()
         self.assertIsInstance(data, list)
         self.assertGreater(len(data), 0)
     
@@ -33,7 +33,7 @@ class TestUsersEndpoint(BaseTestCase):
         response = self.client.get('/api/v1/users/1')
         self.assertEqual(response.status_code, 200)
         
-        data = json.loads(response.data)
+        data = response.json()
         self.assertEqual(data['id'], 1)
         self.assertIn('name', data)
         self.assertIn('email', data)
@@ -52,13 +52,12 @@ class TestUsersEndpoint(BaseTestCase):
         
         response = self.client.post(
             '/api/v1/users',
-            data=json.dumps(new_user),
-            content_type='application/json'
+            json=new_user
         )
         
         self.assertEqual(response.status_code, 201)
         
-        data = json.loads(response.data)
+        data = response.json()
         self.assertIn('id', data)
         self.assertEqual(data['name'], 'Charlie')
         self.assertEqual(data['email'], 'charlie@example.com')
@@ -72,8 +71,7 @@ class TestUsersEndpoint(BaseTestCase):
         
         response = self.client.post(
             '/api/v1/users',
-            data=json.dumps(incomplete_user),
-            content_type='application/json'
+            json=incomplete_user
         )
         
         # Should fail validation
