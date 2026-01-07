@@ -6,11 +6,16 @@ This is a complete example of a pure ASGI API using Connexion 3.x with Python 3.
 
 ```
 connexion-flask-example/
-├── app.py              # Main Flask application
+├── app.py              # Main ASGI application
 ├── api/                # API endpoint handlers
 │   ├── __init__.py
 │   ├── health.py       # Health check endpoint
-│   └── users.py        # User management endpoints
+│   ├── users.py        # User management endpoints
+│   ├── counter.py      # Counter endpoint (async->sync demo)
+│   └── jobs.py         # Background job endpoints (TaskIQ)
+├── workers/            # TaskIQ background workers
+│   ├── __init__.py
+│   └── tasks.py        # Task definitions and broker
 ├── specs/              # OpenAPI/Swagger specifications
 │   └── swagger.yaml    # API specification
 ├── tests/              # Test suite
@@ -39,7 +44,7 @@ uv sync --dev
 ## Running the API
 
 ### Using Docker (Recommended)
-Start services in detached mode:
+Start all services (API + Worker + Redis) in detached mode:
 ```bash
 make up
 ```
@@ -47,6 +52,13 @@ make up
 Start services in foreground (with logs):
 ```bash
 make run
+```
+
+View logs:
+```bash
+make logs          # All services
+make logs-app      # API only
+make logs-worker   # Worker only
 ```
 
 Stop services:
@@ -57,7 +69,13 @@ make down
 ### Local Development (without Docker)
 For local development with hot reload:
 ```bash
-make dev
+make dev         # Start API server
+make dev-worker  # Start TaskIQ worker (in separate terminal)
+```
+
+**Note:** You'll need Redis running locally for the worker:
+```bash
+redis-server
 ```
 
 ### Production
@@ -86,10 +104,19 @@ The API will be available at:
 
 ## Available Endpoints
 
+### Core
 - `GET /api/v1/health` - Health check
 - `GET /api/v1/users` - Get all users
 - `POST /api/v1/users` - Create a new user
 - `GET /api/v1/users/{user_id}` - Get a specific user
+
+### Background Jobs (TaskIQ)
+- `POST /api/v1/jobs/order` - Start order processing job chain (step_one → step_two)
+- `POST /api/v1/jobs/simple` - Start simple independent job
+
+### Demo/Testing
+- `GET /api/v1/counter` - Counter with async→sync pattern demo
+- `GET /api/v1/svg` - SVG generation with Redis caching
 
 ## Running Tests
 
@@ -128,6 +155,8 @@ class TestMyEndpoint(BaseTestCase):
 - **Python 3.13+**: Uses the latest Python version with native async support
 - **Pure ASGI**: Uses `connexion.AsyncApp` with Starlette backend (no Flask)
 - **Async Handlers**: All API endpoints are async functions
+- **TaskIQ Workers**: Fully async background job processing with job chaining
+- **Redis Integration**: Caching and task queue backend
 - **OpenAPI Specification**: All endpoints defined in `specs/swagger.yaml`
 - **Production Ready**: Uses uvicorn with multiple workers for production deployment
 - **Async Tests**: All tests are async using `IsolatedAsyncioTestCase`
@@ -155,4 +184,39 @@ curl -X POST http://localhost:7878/api/v1/users \
 ### Get Specific User
 ```bash
 curl http://localhost:7878/api/v1/users/1
+```
+
+### Start Job Chain (TaskIQ)
+```bash
+curl -X POST http://localhost:7878/api/v1/jobs/order \
+  -H "Content-Type: application/json" \
+  -d '{"order_id": 12345, "user_name": "john_doe"}'
+```
+
+Response:
+```json
+{
+  "message": "Order processing job chain started",
+  "task_id": "abc123...",
+  "order_id": 12345,
+  "chain": ["step_one (validate)", "step_two (payment)"]
+}
+```
+
+Watch the worker logs to see the chain execute:
+```bash
+make logs-worker
+```
+
+You'll see:
+1. `[STEP 1]` - Order validation (2 second delay)
+2. `[STEP 1]` - Kicks off step_two
+3. `[STEP 2]` - Payment processing (1.5 second delay)
+4. `[STEP 2]` - Completion
+
+### Start Simple Job
+```bash
+curl -X POST http://localhost:7878/api/v1/jobs/simple \
+  -H "Content-Type: application/json" \
+  -d '{"message": "hello", "repeat": 5}'
 ```

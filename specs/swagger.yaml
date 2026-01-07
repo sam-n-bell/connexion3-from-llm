@@ -125,6 +125,77 @@ paths:
                   method:
                     type: string
 
+  /jobs/order:
+    post:
+      summary: Start an order processing job chain (TaskIQ)
+      operationId: api.jobs.create_order_job
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - order_id
+                - user_name
+              properties:
+                order_id:
+                  type: integer
+                  example: 12345
+                user_name:
+                  type: string
+                  example: "john_doe"
+      responses:
+        '202':
+          description: Job chain started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  task_id:
+                    type: string
+                  order_id:
+                    type: integer
+                  chain:
+                    type: array
+                    items:
+                      type: string
+
+  /jobs/simple:
+    post:
+      summary: Start a simple independent job (TaskIQ)
+      operationId: api.jobs.create_simple_job
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "hello"
+                repeat:
+                  type: integer
+                  example: 3
+      responses:
+        '202':
+          description: Job started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  task_id:
+                    type: string
+                  parameters:
+                    type: object
+
 components:
   schemas:
     User:

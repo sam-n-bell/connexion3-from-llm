@@ -24,6 +24,7 @@ services:
     ports:
       - "7878:7878"
     environment:
+      - SERVICE_TYPE=app
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     depends_on:
@@ -32,11 +33,27 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:7878/api/v1/health')"]
+      test: ["CMD-SHELL", "python -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:7878/api/v1/health\")' || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 10s
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: connexion-worker
+    restart: unless-stopped
+    environment:
+      - SERVICE_TYPE=worker
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
 
 volumes:
   redis-data:

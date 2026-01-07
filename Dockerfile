@@ -1,33 +1,46 @@
-# Single-stage Dockerfile for Connexion ASGI app with Python 3.13
+# Dockerfile for Connexion ASGI app with Python 3.13
 FROM python:3.13-slim
 
-# Install uv
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+# Install uv (pinned version for reproducibility)
+COPY --from=ghcr.io/astral-sh/uv:0.5.11 /uv /usr/local/bin/uv
 
 # Set working directory
 WORKDIR /app
 
-# Copy dependency files and install
-COPY pyproject.toml uv.lock ./
-RUN uv sync --no-dev --frozen
+# Create non-root user with home directory
+RUN groupadd -r appuser && \
+    useradd -r -g appuser -m -d /home/appuser appuser && \
+    mkdir -p /home/appuser/.cache && \
+    chown -R appuser:appuser /home/appuser
 
-# Copy application code
+# Copy dependency files and install with cache mount
+COPY pyproject.toml uv.lock ./
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --no-dev --frozen
+
+# Copy entrypoint script (changes less frequently than app code)
+COPY entrypoint.sh ./
+RUN chmod +x entrypoint.sh
+
+# Copy application code (most frequently changing)
 COPY app.py ./
 COPY api/ ./api/
+COPY workers/ ./workers/
 COPY specs/ ./specs/
-COPY tests/ ./tests/
+
+# Set ownership to non-root user
+RUN chown -R appuser:appuser /app
 
 # Set environment variables
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
+# Switch to non-root user
+USER appuser
+
 # Expose port
 EXPOSE 7878
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:7878/api/v1/health')"
-
-# Run with uvicorn
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "7878", "--workers", "4"]
+# Use entrypoint script to determine what to run
+ENTRYPOINT ["./entrypoint.sh"]
