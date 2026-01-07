@@ -108,6 +108,23 @@ paths:
                 type: string
                 format: binary
 
+  /counter:
+    get:
+      summary: Get and increment a counter (async handler calling sync Redis function)
+      operationId: api.counter.get_counter
+      responses:
+        '200':
+          description: Current counter value
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  counter:
+                    type: integer
+                  method:
+                    type: string
+
 components:
   schemas:
     User:
