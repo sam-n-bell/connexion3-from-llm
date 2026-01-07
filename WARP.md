@@ -4,10 +4,19 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 
 ## Commands
 
-### Development
+### Docker (Recommended)
+- **Start services (detached)**: `make up`
+- **Start services (foreground)**: `make run`
+- **Stop services**: `make down`
+- **View logs**: `make logs`
+- **Rebuild**: `make build`
+- **Run tests**: `make test`
+- **Clean (remove volumes)**: `make clean`
+
+### Local Development (without Docker)
 - **Install dependencies**: `make install` or `uv sync --dev`
-- **Run server**: `make run` (starts on http://localhost:7878)
-- **Run tests**: `make test` or `uv run pytest tests/ -v`
+- **Run server with reload**: `make dev`
+- **Run tests**: `make test-local` or `uv run pytest tests/ -v`
 - **Run single test**: `uv run pytest tests/test_api.py::TestClassName::test_method_name -v`
 
 ### API Access

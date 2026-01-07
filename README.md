@@ -38,11 +38,26 @@ uv sync --dev
 
 ## Running the API
 
-### Development
-To launch the development server:
+### Using Docker (Recommended)
+Start services in detached mode:
+```bash
+make up
+```
 
+Start services in foreground (with logs):
 ```bash
 make run
+```
+
+Stop services:
+```bash
+make down
+```
+
+### Local Development (without Docker)
+For local development with hot reload:
+```bash
+make dev
 ```
 
 ### Production

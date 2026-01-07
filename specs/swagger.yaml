@@ -81,6 +81,33 @@ paths:
         '404':
           description: User not found
 
+  /svg:
+    get:
+      summary: Generate complex SVG with 1000 elements
+      operationId: api.svg.get_svg
+      parameters:
+        - name: useCache
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: true
+          description: Whether to use Redis cache (default true)
+      responses:
+        '200':
+          description: SVG image with 1000 mixed elements
+          headers:
+            X-Cache-Hit:
+              schema:
+                type: string
+                enum: ['true', 'false']
+              description: Whether the response was served from cache
+          content:
+            image/svg+xml:
+              schema:
+                type: string
+                format: binary
+
 components:
   schemas:
     User:

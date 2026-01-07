@@ -23,7 +23,7 @@ app.add_api(
 )
 
 
-if __name__ == '__main__':
-    # For development
-    import uvicorn
-    uvicorn.run(app, host='0.0.0.0', port=7878)
+# if __name__ == '__main__':
+#     # For development
+#     import uvicorn
+#     uvicorn.run(app, host='0.0.0.0', port=7878)
