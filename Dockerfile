@@ -1,8 +1,8 @@
-# Dockerfile for Connexion ASGI app with Python 3.13
-FROM python:3.13-slim
+# Dockerfile for Connexion ASGI app with Python 3.14
+FROM python:3.14-slim
 
 # Install uv (pinned version for reproducibility)
-COPY --from=ghcr.io/astral-sh/uv:0.5.11 /uv /usr/local/bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.9.22 /uv /usr/local/bin/uv
 
 # Set working directory
 WORKDIR /app
