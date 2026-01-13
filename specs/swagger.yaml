@@ -196,6 +196,159 @@ paths:
                   parameters:
                     type: object
 
+  /orders:
+    get:
+      summary: List orders with pagination
+      operationId: api.orders.list_orders
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: load_children
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Load items and payments eagerly
+      responses:
+        '200':
+          description: List of orders
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  orders:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Order'
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+                  count:
+                    type: integer
+
+    post:
+      summary: Create order (async via TaskIQ)
+      operationId: api.orders.create_order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - customer_name
+                - items
+                - payments
+              properties:
+                customer_name:
+                  type: string
+                  example: "John Doe"
+                items:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - product_name
+                      - quantity
+                      - price
+                    properties:
+                      product_name:
+                        type: string
+                      quantity:
+                        type: integer
+                      price:
+                        type: number
+                payments:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - amount
+                      - payment_method
+                      - transaction_id
+                    properties:
+                      amount:
+                        type: number
+                      payment_method:
+                        type: string
+                      transaction_id:
+                        type: string
+      responses:
+        '202':
+          description: Order creation started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  task_id:
+                    type: string
+                  customer_name:
+                    type: string
+
+  /orders/{order_id}:
+    get:
+      summary: Get order by ID
+      operationId: api.orders.get_order
+      parameters:
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: load_children
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Eagerly load items and payments
+      responses:
+        '200':
+          description: Order details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '404':
+          description: Order not found
+
+  /orders/{order_id}/process:
+    post:
+      summary: Process order (async via TaskIQ)
+      operationId: api.orders.process_order_endpoint
+      parameters:
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '202':
+          description: Order processing started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  task_id:
+                    type: string
+                  order_id:
+                    type: integer
+
 components:
   schemas:
     User:
@@ -207,3 +360,53 @@ components:
           type: string
         email:
           type: string
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+        customer_name:
+          type: string
+        total_amount:
+          type: number
+        status:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        payments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Payment'
+
+    OrderItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        product_name:
+          type: string
+        quantity:
+          type: integer
+        price:
+          type: number
+
+    Payment:
+      type: object
+      properties:
+        id:
+          type: integer
+        amount:
+          type: number
+        payment_method:
+          type: string
+        transaction_id:
+          type: string
+        created_at:
+          type: string
+          format: date-time

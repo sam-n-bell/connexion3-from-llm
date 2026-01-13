@@ -2,6 +2,7 @@
 import asyncio
 from taskiq import TaskiqDepends, TaskiqResult
 from taskiq_redis import ListQueueBroker
+from db.session import init_db, close_db
 
 
 # Create broker (Redis-based)
@@ -9,6 +10,26 @@ broker = ListQueueBroker(
     url="redis://redis:6379",
     queue_name="connexion_tasks"
 )
+
+
+# Register startup hook
+async def startup_hook():
+    """Initialize database on worker startup"""
+    print("[BROKER] Starting up...")
+    await init_db()
+    print("[BROKER] Database initialized")
+
+broker.add_event_handler("startup", startup_hook)
+
+
+# Register shutdown hook
+async def shutdown_hook():
+    """Close database connections on worker shutdown"""
+    print("[BROKER] Shutting down...")
+    await close_db()
+    print("[BROKER] Database connections closed")
+
+broker.add_event_handler("shutdown", shutdown_hook)
 
 
 @broker.task(retry_on_error=True, max_retries=3, retry_delay=2.0)
@@ -102,3 +123,8 @@ async def independent_task(message: str, repeat: int = 1) -> list:
     print(f"[INDEPENDENT] Completed: {results}")
     
     return results
+
+
+# Import database tasks to register them with broker
+# Must be after broker is defined
+import workers.db_tasks  # noqa: F401, E402

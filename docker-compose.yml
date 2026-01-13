@@ -1,4 +1,24 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: connexion-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=connexion_db
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
   redis:
     image: redis:7-alpine
     container_name: connexion-redis
@@ -27,7 +47,10 @@ services:
       - SERVICE_TYPE=app
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/connexion_db
     depends_on:
+      postgres:
+        condition: service_healthy
       redis:
         condition: service_healthy
     networks:
@@ -49,13 +72,18 @@ services:
       - SERVICE_TYPE=worker
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/connexion_db
     depends_on:
+      postgres:
+        condition: service_healthy
       redis:
         condition: service_healthy
     networks:
       - app-network
 
 volumes:
+  postgres-data:
+    driver: local
   redis-data:
     driver: local
 

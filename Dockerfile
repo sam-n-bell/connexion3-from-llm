@@ -26,6 +26,7 @@ RUN chmod +x entrypoint.sh
 COPY app.py ./
 COPY api/ ./api/
 COPY workers/ ./workers/
+COPY db/ ./db/
 COPY specs/ ./specs/
 
 # Set ownership to non-root user
